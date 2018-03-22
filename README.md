@@ -1,19 +1,20 @@
-# Official Flyway Docker images
+# Flyway Docker images for OpenShiftv3
 
-[![Docker Auto Build](https://img.shields.io/docker/automated/boxfuse/flyway.svg?style=flat-square)][docker]
+[![Docker Auto Build](https://img.shields.io/docker/automated/javafactory/openshift-centos7-flyway.svg?style=flat-square)][docker]
 
-[docker]: https://hub.docker.com/r/boxfuse/flyway/
+This is a fork of the official Flyway repository, which can be found [here](https://hub.docker.com/r/boxfuse/flyway/). Please refer to this repository for complete documentation.
 
-This is the official repository for [Flyway Command-line](https://flywaydb.org/documentation/commandline/) images.
+This image uses a non-root user so it can run within an OpenShift cluster.
+
+Dockerfile was inspired (shamelessly copied) by:
+* the official Flyway [Dockerfile](https://github.com/flyway/flyway-docker/blob/master/Dockerfile)
+* the official WildFly S2i OpenShift [Dockerfile](https://github.com/openshift-s2i/s2i-wildfly/blob/master/11.0/Dockerfile)
 
 ## Supported Tags
 
-The following tags are officially supported:
+The following tags are supported:
 
 -	[`5.0.7`, `5.0`, `5`, `latest` (*Dockerfile*)](https://github.com/flyway/flyway-docker/blob/master/Dockerfile)
--	[`5.0.7-alpine`, `5.0-alpine`, `5-alpine`, `latest-alpine` (*alpine/Dockerfile*)](https://github.com/flyway/flyway-docker/blob/master/alpine/Dockerfile)
--	[`4.2.0`, `4.2`, `4` (*Dockerfile*)](https://github.com/flyway/flyway-docker/blob/master/Dockerfile)
--	[`4.2.0-alpine`, `4.2-alpine`, `4-alpine` (*alpine/Dockerfile*)](https://github.com/flyway/flyway-docker/blob/master/alpine/Dockerfile)
 
 ## Supported Volumes
 
@@ -30,13 +31,13 @@ Volume | Usage
 
 The easiest way to get started is simply to test the image by running
 
-`docker run --rm boxfuse/flyway`
+`docker run --rm javafactory/openshift-centos7-flyway`
 
 This will give you Flyway Command-line's usage instructions.
 
 To do anything useful however, you must pass the arguments that you need to the image. For example:
 
-`docker run --rm boxfuse/flyway -url=jdbc:h2:mem:test -user=sa info`
+`docker run --rm javafactory/openshift-centos7-flyway -url=jdbc:h2:mem:test -user=sa info`
 
 ## Adding SQL files
 
@@ -55,7 +56,7 @@ CREATE TABLE MyTable (
 
 Now run the image with the volume mapped:
                                                              
-`docker run --rm -v /my/sqldir:/flyway/sql boxfuse/flyway -url=jdbc:h2:mem:test -user=sa migrate`
+`docker run --rm -v /my/sqldir:/flyway/sql javafactory/openshift-centos7-flyway -url=jdbc:h2:mem:test -user=sa migrate`
 
 ## Adding a config file
 
@@ -72,7 +73,7 @@ flyway.user=sa
 
 Now run the image with that volume mapped as well:
             
-`docker run --rm -v /my/sqldir:/flyway/sql -v /my/confdir:/flyway/conf boxfuse/flyway migrate`
+`docker run --rm -v /my/sqldir:/flyway/sql -v /my/confdir:/flyway/conf javafactory/openshift-centos7-flyway migrate`
 
 ## Adding a JDBC driver
 
@@ -91,14 +92,6 @@ Flyway ships by default with drivers for
 If your database is not in this list, or if you want to ship a different or newer driver than the one included you
 can do so using the `flyway/drivers` volume.
 
-### Example
-
-Create a directory and drop for example the Oracle JDBC driver (`ojdbc8.jar`) in there.
-
-You can now let Flyway make use of it my mapping that volume as well:
-            
-`docker run --rm -v /my/sqldir:/flyway/sql -v /my/confdir:/flyway/conf -v /my/driverdir:/flyway/drivers boxfuse/flyway migrate`
-
 ## Adding Java-based migrations and callbacks
 
 To pass in Java-based migrations and callbacks you can use the `flyway/jars` volume. 
@@ -109,33 +102,12 @@ Create a directory and drop for a jar with your Java-based migrations in there.
 
 You can now let Flyway make use of it my mapping that volume as well:
             
-`docker run --rm -v /my/sqldir:/flyway/sql -v /my/confdir:/flyway/conf -v /my/jardir:/flyway/jars boxfuse/flyway migrate`
+`docker run --rm -v /my/sqldir:/flyway/sql -v /my/confdir:/flyway/conf -v /my/jardir:/flyway/jars javafactory/openshift-centos7-flyway migrate`
 
-## Docker Compose
+## OpenShift DeploymentConfig
 
-To run both Flyway and the database that will be migrated in containers, you can use a `docker-compose.yml` file that
-starts and links both containers.
+This image can be used as an [init container](https://kubernetes.io/docs/concepts/workloads/pods/init-containers/) to run a migration before a Pod starts.
 
 ### Example
 
-```
-version: '3'
-services:
-  flyway:
-    image: boxfuse/flyway
-    command: -url=jdbc:mysql://db -schemas=myschema -user=root -password=P@ssw0rd migrate
-    volumes:
-      - .:/flyway/sql
-    depends_on:
-      - db
-  db:
-    image: mysql
-    environment:
-      - MYSQL_ROOT_PASSWORD=P@ssw0rd
-    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    ports:
-      - 3306:3306
-```
-
-Run `docker-compose up -d db`, wait a minute for MySQL to be initialized (or tail logs with `docker-compose logs -f`) 
-then run `docker-compose up flyway`.
+TBD.
